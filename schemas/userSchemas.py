@@ -6,3 +6,7 @@ class UpdateUserRequest(BaseModel):
 
 class DeleteUserRequest(BaseModel):
     email: str
+
+class SignInRequest(BaseModel):
+    email: str
+    password:str

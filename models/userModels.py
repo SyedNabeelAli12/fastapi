@@ -6,6 +6,8 @@ class User(BaseModel):
     email: str
     age: int
     active:bool = True
+    password:str
+    refresh_token:str
 
 class UserResponse(BaseModel):
     name: str
