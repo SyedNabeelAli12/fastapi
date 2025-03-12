@@ -2,12 +2,13 @@ from fastapi import APIRouter, HTTPException, Depends,Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pymongo.errors import DuplicateKeyError
 from database import users_collection
-from models.userModels import User, UserResponse
+from models.user_model import User, UserResponse
 from schemas.userSchemas import UpdateUserRequest,DeleteUserRequest, SignInRequest
 from common_functions.password_hash import hash_password
 from common_functions.jwt import generate_tokens,decode_jwt
 import jwt
 from config import JWT_SK
+import httpx
 
 router = APIRouter()
 security = HTTPBearer()
@@ -77,7 +78,7 @@ async def update_user(request: DeleteUserRequest):
     result["id"] = str(result["_id"])
     del result["_id"]
     return result
-
+    
 
 @router.post("/sign-in/")
 async def sign_in(request: SignInRequest):
@@ -89,10 +90,16 @@ async def sign_in(request: SignInRequest):
     #   result["jwt"] =  generate_tokens(result["email"],result["role"])
         access_token, refresh_token = generate_tokens(result["email"])
     result["access_token"]= access_token
-    result["refresh_token"]= refresh_token
-    # refresh_tokens_db[username] = refresh_token
-    await users_collection.find_one_and_update(
-        {"email": request.email},{"$set": {"refresh_token": refresh_token}})
+    # response = requests.post("http://127.0.0.1:8000/create_token/",json={"email":request.email,"refresh_token":refresh_token, "active":"1"})
+    # print(response)
+    async with httpx.AsyncClient() as client:
+        response = await client.post("http://127.0.0.1:8000/token/create_token/", json={
+        "email": request.email,
+        "refresh_token": refresh_token,
+        "active": "1"
+    }, timeout=10)  # 10 seconds timeout
+    print(response.status_code)
+
     result["id"] = str(result["_id"])
     
     del result["_id"]
